@@ -1,12 +1,750 @@
 <!doctype html>
 <html lang="ko">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>대전시 투표사무원 자동배정 시스템</title>
-  </head>
-  <body>
-    <div id="app"></div>
-    <script type="module" src="/src/main.js"></script>
-  </body>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>대전시 투표사무원 자동배정 시스템</title>
+  <style>
+    :root {
+      --bg: #eef3f8;
+      --panel: #fff;
+      --line: #d8e1eb;
+      --line-strong: #b8c8d8;
+      --text: #1e293b;
+      --muted: #64748b;
+      --primary: #1769c2;
+      --primary-dark: #0f4f96;
+      --primary-soft: #e7f1ff;
+      font-family: "Noto Sans KR", "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; color: var(--text); background: var(--bg); }
+    button, input, select, textarea { font: inherit; }
+    button {
+      min-height: 40px; border: 0; border-radius: 6px; padding: 0 16px;
+      color: #fff; background: var(--primary); cursor: pointer; font-weight: 700;
+    }
+    button:hover { background: var(--primary-dark); }
+    button.secondary { color: var(--primary-dark); background: var(--primary-soft); border: 1px solid #b7d6fb; }
+    button.ghost { color: var(--text); background: #fff; border: 1px solid var(--line-strong); }
+    .app-header { background: #0f4f96; color: #fff; border-bottom: 4px solid #73a8df; }
+    .app-header > div { width: min(1200px, calc(100% - 32px)); margin: 0 auto; padding: 28px 0 24px; }
+    .eyebrow { margin: 0 0 6px; color: #cfe3fb; font-size: 13px; font-weight: 700; }
+    h1, h2, h3, p { margin-top: 0; }
+    h1 { margin-bottom: 0; font-size: 30px; }
+    h2 { margin-bottom: 6px; font-size: 22px; }
+    h3 { margin-bottom: 12px; font-size: 17px; }
+    .container { width: min(1200px, calc(100% - 32px)); margin: 24px auto 48px; }
+    .top-tabs, .admin-tabs { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+    .top-tabs button, .admin-tabs button { color: var(--primary-dark); background: #fff; border: 1px solid var(--line-strong); }
+    .top-tabs button.active, .admin-tabs button.active { color: #fff; background: var(--primary); border-color: var(--primary); }
+    .card { margin-bottom: 16px; padding: 22px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 8px 22px rgba(15, 79, 150, .06); }
+    .section-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
+    .section-heading p { margin-bottom: 0; color: var(--muted); }
+    .form-grid, .settings-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+    label { display: grid; gap: 7px; color: #334155; font-size: 14px; font-weight: 700; }
+    input, select, textarea { width: 100%; min-height: 40px; border: 1px solid var(--line-strong); border-radius: 6px; padding: 9px 11px; color: var(--text); background: #fff; }
+    textarea { resize: vertical; }
+    .span-2 { grid-column: span 2; }
+    .span-3 { grid-column: 1 / -1; }
+    .align-end { align-self: end; }
+    .button-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .button-row.compact { justify-content: flex-end; }
+    .subsection { margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--line); }
+    .notice { margin-bottom: 16px; padding: 14px; border: 1px solid #b7d6fb; border-radius: 8px; background: #f8fbff; color: #17395f; }
+    .coordinate-status { display: flex; align-items: center; min-height: 40px; align-self: end; padding: 9px 11px; color: var(--primary-dark); background: var(--primary-soft); border: 1px solid #b7d6fb; border-radius: 6px; font-size: 14px; font-weight: 800; }
+    .upload-box { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; padding: 14px; border: 1px dashed var(--line-strong); border-radius: 8px; background: #f8fbff; flex-wrap: wrap; }
+    .upload-box span { color: var(--muted); font-size: 14px; }
+    .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; }
+    table { width: 100%; min-width: 820px; border-collapse: collapse; font-size: 14px; }
+    th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--line); white-space: nowrap; }
+    th { color: #17395f; background: #edf5ff; font-weight: 800; }
+    tr:last-child td { border-bottom: 0; }
+    .empty-message { margin: 0; padding: 24px; color: var(--muted); text-align: center; background: #f8fafc; }
+    .check-line { display: flex; align-items: center; gap: 8px; min-height: 40px; padding: 9px 11px; border: 1px solid var(--line-strong); border-radius: 6px; background: #fff; }
+    .check-line input { width: auto; min-height: auto; }
+    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 18px; }
+    .stats-grid div { padding: 18px; border: 1px solid var(--line); border-radius: 8px; background: #f8fbff; }
+    .stats-grid strong { display: block; color: var(--primary-dark); font-size: 28px; }
+    .stats-grid span { color: var(--muted); font-size: 14px; font-weight: 700; }
+    @media (max-width: 860px) {
+      .form-grid, .settings-grid, .stats-grid { grid-template-columns: 1fr; }
+      .span-2, .span-3 { grid-column: auto; }
+      .section-heading { flex-direction: column; align-items: stretch; }
+    }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+  <script>
+    const appState = {
+      pollingPlaces: [],
+      applicants: [],
+      conditions: {
+        priority: ['distance', 'preferredDistrict', 'preferredDong'],
+        groupByDepartment: false,
+        considerRank: false,
+        considerAddress: true,
+      },
+      assignmentResult: [],
+    };
+
+    let kakaoLoadPromise;
+    const DEFAULT_KAKAO_JS_KEY = '';
+
+    function getKakaoKey() {
+      return localStorage.getItem('KAKAO_JS_KEY') || DEFAULT_KAKAO_JS_KEY;
+    }
+
+    function loadKakaoSdk() {
+      if (window.kakao?.maps?.services) return Promise.resolve(window.kakao);
+      if (kakaoLoadPromise) return kakaoLoadPromise;
+
+      const kakaoKey = getKakaoKey();
+      if (!kakaoKey) {
+        return Promise.reject(new Error('카카오 JavaScript 키를 먼저 저장해주세요.'));
+      }
+
+      kakaoLoadPromise = new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = 'https://dapi.kakao.com/v2/maps/sdk.js?appkey=' + encodeURIComponent(kakaoKey) + '&libraries=services&autoload=false';
+        script.async = true;
+        script.onload = () => window.kakao.maps.load(() => resolve(window.kakao));
+        script.onerror = () => reject(new Error('카카오 지도 SDK를 불러오지 못했습니다. file://에서 막히면 카카오 도메인 정책상 로컬 서버 방식이 필요합니다.'));
+        document.head.appendChild(script);
+      });
+
+      return kakaoLoadPromise;
+    }
+
+    async function geocodeAddress(address, geocoderOverride) {
+      if (!address.trim()) throw new Error('주소를 입력해주세요.');
+      const kakao = geocoderOverride ? window.kakao : await loadKakaoSdk();
+      const geocoder = geocoderOverride || new kakao.maps.services.Geocoder();
+
+      return new Promise((resolve, reject) => {
+        geocoder.addressSearch(address, (results, status) => {
+          if (status !== kakao.maps.services.Status.OK || results.length === 0) {
+            reject(new Error('주소 좌표 변환 결과가 없습니다.'));
+            return;
+          }
+          resolve({ lat: Number(results[0].y), lng: Number(results[0].x) });
+        });
+      });
+    }
+
+    async function fillMissingCoordinates(items, getAddress, onProgress) {
+      let successCount = 0;
+      let failCount = 0;
+      const failureSamples = [];
+      const kakao = await loadKakaoSdk();
+      const geocoder = new kakao.maps.services.Geocoder();
+
+      for (let index = 0; index < items.length; index += 1) {
+        const item = items[index];
+        const hasCoordinates = toCoordinate(item.lat) !== null && toCoordinate(item.lng) !== null;
+        const address = getAddress(item);
+
+        if (hasCoordinates) {
+          continue;
+        }
+
+        if (!address || !address.trim()) {
+          failCount += 1;
+          continue;
+        }
+
+        try {
+          const result = await geocodeAddress(address, geocoder);
+          item.lat = result.lat;
+          item.lng = result.lng;
+          successCount += 1;
+        } catch (error) {
+          failCount += 1;
+          if (failureSamples.length < 5) {
+            failureSamples.push(`${index + 1}행: ${address} - ${error.message}`);
+          }
+        }
+
+        if (onProgress) {
+          onProgress(index + 1, items.length, successCount, failCount);
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, 120));
+      }
+
+      return { successCount, failCount, failureSamples };
+    }
+
+    function toCoordinate(value) {
+      if (value === null || value === undefined || String(value).trim() === '') return null;
+      const number = Number(String(value).trim());
+      return Number.isFinite(number) ? number : null;
+    }
+
+    function calculateDistanceKm(lat1, lng1, lat2, lng2) {
+      const values = [lat1, lng1, lat2, lng2].map(toCoordinate);
+      if (values.some((value) => value === null)) return null;
+      const [fromLat, fromLng, toLat, toLng] = values;
+      const earthRadiusKm = 6371;
+      const toRadians = (degree) => degree * Math.PI / 180;
+      const dLat = toRadians(toLat - fromLat);
+      const dLng = toRadians(toLng - fromLng);
+      const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRadians(fromLat)) * Math.cos(toRadians(toLat)) * Math.sin(dLng / 2) ** 2;
+      return earthRadiusKm * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+
+    function normalizeVoteType(value = '') {
+      if (value.includes('사전') || value === 'early') return 'early';
+      if (value.includes('본') || value === 'main') return 'main';
+      return 'both';
+    }
+
+    function runNearestAssignment(pollingPlaces, applicants, conditions) {
+      const assignedIds = new Set();
+      const results = [];
+
+      pollingPlaces.forEach((place) => {
+        const requiredCount = Number(place.requiredCount || 0);
+        const placeLat = toCoordinate(place.lat);
+        const placeLng = toCoordinate(place.lng);
+        if (!requiredCount || placeLat === null || placeLng === null) return;
+
+        const placeType = normalizeVoteType(place.type);
+        const candidates = applicants
+          .filter((applicant) => !assignedIds.has(applicant.id))
+          .filter((applicant) => {
+            const available = normalizeVoteType(applicant.availableType);
+            if (placeType === 'early') return available === 'early' || available === 'both';
+            if (placeType === 'main') return available === 'main' || available === 'both';
+            return true;
+          })
+          .map((applicant) => {
+            const distanceKm = calculateDistanceKm(placeLat, placeLng, applicant.lat, applicant.lng);
+            if (distanceKm === null) return null;
+            let preferenceScore = 0;
+            if (conditions.priority.includes('preferredDistrict')) {
+              if (applicant.preferredDistrict1 === place.district) preferenceScore -= .3;
+              if (applicant.preferredDistrict2 === place.district) preferenceScore -= .15;
+            }
+            if (conditions.priority.includes('preferredDong')) {
+              if (applicant.preferredDong1 === place.dong) preferenceScore -= .2;
+              if (applicant.preferredDong2 === place.dong) preferenceScore -= .1;
+            }
+            return { applicant, distanceKm, preferenceScore, sortScore: distanceKm + preferenceScore };
+          })
+          .filter(Boolean)
+          .sort((a, b) => a.sortScore - b.sortScore);
+
+        candidates.slice(0, requiredCount).forEach(({ applicant, distanceKm, preferenceScore }) => {
+          assignedIds.add(applicant.id);
+          results.push({
+            type: place.type,
+            district: place.district,
+            dong: place.dong,
+            pollingPlaceName: place.name,
+            applicantName: applicant.name,
+            department: applicant.department,
+            distanceKm,
+            reason: preferenceScore < 0 ? `거리 ${distanceKm.toFixed(2)}km, 선호지역 반영` : `거리 ${distanceKm.toFixed(2)}km`,
+          });
+        });
+      });
+
+      return results;
+    }
+
+    function createTable(columns, rows, emptyMessage) {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'table-wrap';
+      if (!rows.length) {
+        wrapper.innerHTML = '<p class="empty-message">' + emptyMessage + '</p>';
+        return wrapper;
+      }
+      wrapper.innerHTML = '<table><thead><tr>' +
+        columns.map((column) => '<th>' + column.label + '</th>').join('') +
+        '</tr></thead><tbody>' +
+        rows.map((row) => '<tr>' + columns.map((column) => {
+          const value = column.render ? column.render(row) : row[column.key];
+          return '<td>' + (value ?? '-') + '</td>';
+        }).join('') + '</tr>').join('') +
+        '</tbody></table>';
+      return wrapper;
+    }
+
+    function readCsvRows(file) {
+      if (!file.name.toLowerCase().endsWith('.csv')) {
+        return Promise.reject(new Error('CSV 파일만 업로드할 수 있습니다.'));
+      }
+      return file.arrayBuffer().then((buffer) => {
+        const text = decodeCsvText(buffer);
+        const rows = parseCsv(text.replace(/^\uFEFF/, ''));
+        if (rows.length < 2) return [];
+        const headers = rows[0].map((header) => normalizeHeader(header));
+        return rows.slice(1)
+          .filter((row) => row.some((cell) => cell.trim() !== ''))
+          .map((row) => Object.fromEntries(headers.map((header, index) => [header, (row[index] || '').trim()])));
+      });
+    }
+
+    function decodeCsvText(buffer) {
+      const candidates = ['utf-8', 'euc-kr', 'windows-949'];
+      const decoded = candidates.map((encoding) => {
+        try {
+          return new TextDecoder(encoding).decode(buffer);
+        } catch {
+          return '';
+        }
+      }).filter(Boolean);
+
+      return decoded.find((text) => /부서|성명|주소|투표소|자치구|행정동/.test(text)) || decoded[0] || '';
+    }
+
+    function normalizeHeader(header) {
+      return String(header || '')
+        .replace(/^\uFEFF/, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+
+    function pick(row, names, fallback = '') {
+      for (const name of names) {
+        if (row[name] !== undefined && row[name] !== '') return row[name];
+      }
+      return fallback;
+    }
+
+    function escapeCsvValue(value) {
+      const text = String(value ?? '');
+      if (/[",\r\n]/.test(text)) {
+        return '"' + text.replace(/"/g, '""') + '"';
+      }
+      return text;
+    }
+
+    function downloadCsv(filename, columns, rows) {
+      if (!rows.length) {
+        alert('다운로드할 결과가 없습니다.');
+        return;
+      }
+
+      const header = columns.map((column) => escapeCsvValue(column.label)).join(',');
+      const body = rows.map((row) => columns.map((column) => {
+        const value = column.render ? column.render(row) : row[column.key];
+        return escapeCsvValue(value);
+      }).join(',')).join('\r\n');
+      const csv = '\uFEFF' + header + '\r\n' + body;
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    function countMissingCoordinates(items) {
+      return items.filter((item) => toCoordinate(item.lat) === null || toCoordinate(item.lng) === null).length;
+    }
+
+    function parseCsv(text) {
+      const rows = [];
+      let row = [];
+      let cell = '';
+      let inQuotes = false;
+      for (let index = 0; index < text.length; index += 1) {
+        const char = text[index];
+        const next = text[index + 1];
+        if (char === '"' && inQuotes && next === '"') { cell += '"'; index += 1; continue; }
+        if (char === '"') { inQuotes = !inQuotes; continue; }
+        if (char === ',' && !inQuotes) { row.push(cell); cell = ''; continue; }
+        if ((char === '\n' || char === '\r') && !inQuotes) {
+          if (char === '\r' && next === '\n') index += 1;
+          row.push(cell); rows.push(row); row = []; cell = ''; continue;
+        }
+        cell += char;
+      }
+      row.push(cell);
+      rows.push(row);
+      return rows;
+    }
+
+    function renderKeyNotice() {
+      return `
+        <section class="card">
+          <div class="section-heading">
+            <div>
+              <h2>카카오 주소 변환 키</h2>
+          <p>서버 없는 HTML 버전이라 키는 이 브라우저의 localStorage에만 저장됩니다.</p>
+            </div>
+          </div>
+          <div class="form-grid">
+            <label class="span-2">카카오 JavaScript 키
+              <input id="kakao-key-input" value="${getKakaoKey()}" placeholder="카카오 JavaScript 키 입력">
+            </label>
+            <button class="secondary align-end" id="save-kakao-key">키 저장</button>
+          </div>
+          <p class="notice" style="margin-top:14px;margin-bottom:0;">file://에서 카카오 SDK가 막히면 주소 변환만 로컬 서버 버전으로 확인해야 합니다. 신청, CSV, 배정 기능은 이 HTML만으로 동작합니다.</p>
+        </section>
+      `;
+    }
+
+    function createApplicantForm() {
+      const section = document.createElement('section');
+      section.className = 'card';
+      section.innerHTML = `
+        <div class="section-heading"><div><h2>투표사무원 신청 입력</h2><p>주소 좌표 변환 후 신청하면 배정 후보에 등록됩니다.</p></div></div>
+        <form class="form-grid" id="applicant-form">
+          <label>부서명<input name="department" required></label>
+          <label>성명<input name="name" required></label>
+          <label>직급<input name="rank"></label>
+          <label>생년월일<input type="date" name="birthDate"></label>
+          <label>연락처<input name="phone" placeholder="연락처 입력"></label>
+          <label class="span-2">주소<input name="address" placeholder="대전광역시 ..."></label>
+          <button class="secondary align-end" type="button" id="geocode-button">주소 좌표 변환</button>
+          <input type="hidden" name="lat"><input type="hidden" name="lng">
+          <div class="coordinate-status" id="coordinate-status">주소 좌표 미변환</div>
+          <label>가능한 투표 유형<select name="availableType"><option value="early">사전투표만 가능</option><option value="main">본투표만 가능</option><option value="both" selected>모두 가능</option></select></label>
+          <label>선호 신청 여부<select name="preferenceEnabled"><option value="enabled">선호지역 신청</option><option value="none" selected>선호지역 없음</option></select></label>
+          <label>선호구 1순위<input name="preferredDistrict1"></label>
+          <label>선호구 2순위<input name="preferredDistrict2"></label>
+          <label>선호동 1순위<input name="preferredDong1"></label>
+          <label>선호동 2순위<input name="preferredDong2"></label>
+          <label>은행명<input name="bankName"></label>
+          <label>계좌번호<input name="accountNumber"></label>
+          <label class="span-3">비고<textarea name="memo" rows="3"></textarea></label>
+          <div class="button-row span-3"><button type="submit">신청하기</button><button class="ghost" type="reset">초기화</button></div>
+        </form>
+        <div class="subsection"><h3>신청 내역 미리보기</h3><div id="applicant-preview"></div></div>
+      `;
+      const form = section.querySelector('#applicant-form');
+      const preview = section.querySelector('#applicant-preview');
+      const render = () => preview.replaceChildren(createTable([
+        { key: 'department', label: '부서명' }, { key: 'name', label: '성명' }, { key: 'rank', label: '직급' },
+        { key: 'phone', label: '연락처' }, { key: 'address', label: '주소' }, { key: 'availableType', label: '가능 유형' },
+      ], appState.applicants, '아직 신청 내역이 없습니다.'));
+      section.querySelector('#geocode-button').addEventListener('click', async () => {
+        try {
+          const result = await geocodeAddress(form.elements.address.value);
+          form.elements.lat.value = result.lat;
+          form.elements.lng.value = result.lng;
+          section.querySelector('#coordinate-status').textContent = '주소 좌표 변환 완료';
+        } catch (error) { alert(error.message); }
+      });
+      form.addEventListener('submit', (event) => {
+        event.preventDefault();
+        appState.applicants.push({ id: crypto.randomUUID(), ...Object.fromEntries(new FormData(form).entries()) });
+        render();
+        form.reset();
+        section.querySelector('#coordinate-status').textContent = '주소 좌표 미변환';
+      });
+      render();
+      return section;
+    }
+
+    const samplePollingPlaces = [
+      { id: crypto.randomUUID(), type: '사전투표소', district: '서구', dong: '둔산동', name: '둔산1동 사전투표소', address: '대전광역시 서구 둔산동', requiredCount: 2, lat: 36.3504, lng: 127.3845 },
+      { id: crypto.randomUUID(), type: '본투표소', district: '유성구', dong: '온천동', name: '온천1동 제1투표소', address: '대전광역시 유성구 온천동', requiredCount: 2, lat: 36.3531, lng: 127.341 },
+    ];
+
+    function createPollingPlaceManager() {
+      const section = document.createElement('section');
+      section.className = 'card';
+      section.innerHTML = `
+        <div class="section-heading"><div><h2>투표소 관리</h2><p>CSV 헤더: 구분, 자치구, 행정동, 투표소명, 주소, 필요인원, 위도, 경도</p></div><button class="secondary" id="load-sample-places">샘플 투표소 불러오기</button></div>
+        <div class="upload-box"><input type="file" id="polling-place-upload" accept=".csv"><button class="secondary" id="geocode-places" type="button">투표소 주소 좌표 일괄 변환</button><span id="place-upload-help">CSV 업로드를 지원합니다.</span></div>
+        <div id="polling-place-table"></div>
+      `;
+      const table = section.querySelector('#polling-place-table');
+      const render = () => table.replaceChildren(createTable([
+        { key: 'type', label: '구분' }, { key: 'district', label: '자치구' }, { key: 'dong', label: '행정동' },
+        { key: 'name', label: '투표소명' }, { key: 'address', label: '주소' }, { key: 'requiredCount', label: '필요인원' },
+        { key: 'lat', label: '위도' }, { key: 'lng', label: '경도' },
+      ], appState.pollingPlaces, '등록된 투표소가 없습니다.'));
+      section.querySelector('#load-sample-places').addEventListener('click', () => { appState.pollingPlaces = [...samplePollingPlaces]; render(); });
+      section.querySelector('#geocode-places').addEventListener('click', async () => {
+        const status = section.querySelector('#place-upload-help');
+        try {
+          status.textContent = '투표소 좌표 변환 중...';
+          const result = await fillMissingCoordinates(
+            appState.pollingPlaces,
+            (place) => place.address,
+            (done, total, success, fail) => {
+              status.textContent = `투표소 좌표 변환 중 ${done}/${total}건, 성공 ${success}건, 실패 ${fail}건`;
+            },
+          );
+          render();
+          status.textContent = `투표소 좌표 변환 완료: 성공 ${result.successCount}건, 실패 ${result.failCount}건`;
+          if (result.failureSamples.length) {
+            alert('일부 주소 변환 실패 예시:\n' + result.failureSamples.join('\n'));
+          }
+        } catch (error) {
+          status.textContent = '투표소 좌표 변환 실패';
+          alert(error.message);
+        }
+      });
+      section.querySelector('#polling-place-upload').addEventListener('change', async (event) => {
+        try {
+          const rows = await readCsvRows(event.target.files[0]);
+          appState.pollingPlaces = rows.map((row) => ({
+            id: crypto.randomUUID(),
+            type: pick(row, ['구분', '투표구분', '유형']),
+            district: pick(row, ['자치구', '구', '구청']),
+            dong: pick(row, ['행정동', '동']),
+            name: pick(row, ['투표소명', '투표소', '장소명']),
+            address: pick(row, ['주소', '소재지', '투표소주소']),
+            requiredCount: Number(pick(row, ['필요인원', '필요 인원', '인원'], 0)),
+            lat: pick(row, ['위도', 'lat', 'latitude']),
+            lng: pick(row, ['경도', 'lng', 'lon', 'longitude']),
+          }));
+          render();
+          alert(appState.pollingPlaces.length + '건을 불러왔습니다.');
+        } catch (error) { alert(error.message); }
+      });
+      render();
+      return section;
+    }
+
+    function createApplicantManager() {
+      const section = document.createElement('section');
+      section.className = 'card';
+      section.innerHTML = `
+        <div class="section-heading"><div><h2>신청명단 관리</h2><p>CSV에 위도/경도 컬럼이 없어도 내부 컬럼을 만들고 주소 기준으로 자동 변환합니다.</p></div></div>
+        <div class="upload-box"><input type="file" id="applicant-upload" accept=".csv"><button class="secondary" id="geocode-applicants" type="button">신청자 주소 좌표 일괄 변환</button><button class="secondary" id="download-applicants" type="button">좌표 포함 신청명단 다운로드</button><span id="applicant-upload-help">CSV 업로드 시 좌표 변환을 자동으로 시도합니다.</span></div>
+        <div id="applicant-manager-table"></div>
+      `;
+      const table = section.querySelector('#applicant-manager-table');
+      const render = () => table.replaceChildren(createTable([
+        { key: 'department', label: '부서명' }, { key: 'name', label: '성명' }, { key: 'rank', label: '직급' },
+        { key: 'phone', label: '연락처' }, { key: 'address', label: '주소' }, { key: 'lat', label: '위도' }, { key: 'lng', label: '경도' },
+      ], appState.applicants, '등록된 신청자가 없습니다.'));
+      section.querySelector('#geocode-applicants').addEventListener('click', async () => {
+        const status = section.querySelector('#applicant-upload-help');
+        try {
+          const missingCount = countMissingCoordinates(appState.applicants);
+          if (missingCount === 0) {
+            status.textContent = '모든 신청자에 좌표가 있습니다.';
+            return;
+          }
+          status.textContent = '신청자 좌표 변환 중...';
+          const result = await fillMissingCoordinates(
+            appState.applicants,
+            (applicant) => applicant.address,
+            (done, total, success, fail) => {
+              status.textContent = `신청자 좌표 변환 중 ${done}/${total}건, 성공 ${success}건, 실패 ${fail}건`;
+            },
+          );
+          render();
+          status.textContent = `신청자 좌표 변환 완료: 성공 ${result.successCount}건, 실패 ${result.failCount}건`;
+          if (result.failureSamples.length) {
+            alert('일부 주소 변환 실패 예시:\n' + result.failureSamples.join('\n'));
+          }
+        } catch (error) {
+          status.textContent = '신청자 좌표 변환 실패';
+          alert(error.message);
+        }
+      });
+      section.querySelector('#download-applicants').addEventListener('click', () => {
+        downloadCsv('신청명단_좌표포함.csv', [
+          { key: 'department', label: '부서명' },
+          { key: 'name', label: '성명' },
+          { key: 'rank', label: '직급' },
+          { key: 'birthDate', label: '생년월일' },
+          { key: 'phone', label: '연락처' },
+          { key: 'address', label: '주소' },
+          { key: 'lat', label: '위도' },
+          { key: 'lng', label: '경도' },
+          { key: 'availableType', label: '가능투표유형' },
+          { key: 'preferredDistrict1', label: '선호구 1순위' },
+          { key: 'preferredDistrict2', label: '선호구 2순위' },
+          { key: 'preferredDong1', label: '선호동 1순위' },
+          { key: 'preferredDong2', label: '선호동 2순위' },
+        ], appState.applicants);
+      });
+      section.querySelector('#applicant-upload').addEventListener('change', async (event) => {
+        const status = section.querySelector('#applicant-upload-help');
+        try {
+          const rows = await readCsvRows(event.target.files[0]);
+          const imported = rows.map((row) => ({
+            id: crypto.randomUUID(),
+            department: pick(row, ['부서명', '부서', '소속']),
+            name: pick(row, ['성명', '이름', '신청자', '신청자명']),
+            rank: pick(row, ['직급', '직위']),
+            birthDate: pick(row, ['생년월일', '생년 월일']),
+            phone: pick(row, ['연락처', '전화번호', '휴대폰']),
+            address: pick(row, ['주소', '거주지', '주소지']),
+            lat: pick(row, ['위도', 'lat', 'latitude']),
+            lng: pick(row, ['경도', 'lng', 'lon', 'longitude']),
+            availableType: pick(row, ['가능투표유형', '가능 투표 유형', '투표유형'], 'both'),
+            preferredDistrict1: pick(row, ['선호구 1순위', '선호구1', '선호구']),
+            preferredDistrict2: pick(row, ['선호구 2순위', '선호구2']),
+            preferredDong1: pick(row, ['선호동 1순위', '선호동1', '선호동']),
+            preferredDong2: pick(row, ['선호동 2순위', '선호동2']),
+          }));
+          appState.applicants.push(...imported);
+          render();
+          const missingCount = countMissingCoordinates(imported);
+          status.textContent = `${imported.length}건을 불러왔습니다. 좌표 없는 신청자 ${missingCount}건 자동 변환 중...`;
+
+          if (missingCount > 0) {
+            const result = await fillMissingCoordinates(
+              imported,
+              (applicant) => applicant.address,
+              (done, total, success, fail) => {
+                status.textContent = `신청자 좌표 자동 변환 중 ${done}/${total}건, 성공 ${success}건, 실패 ${fail}건`;
+              },
+            );
+            render();
+            status.textContent = `신청자 좌표 자동 변환 완료: 성공 ${result.successCount}건, 실패 ${result.failCount}건`;
+            if (result.failureSamples.length) {
+              alert('일부 주소 변환 실패 예시:\n' + result.failureSamples.join('\n'));
+            }
+          }
+        } catch (error) {
+          status.textContent = '신청명단 처리 실패';
+          alert(error.message);
+        }
+      });
+      render();
+      return section;
+    }
+
+    function createConditionManager() {
+      const section = document.createElement('section');
+      section.className = 'card';
+      section.innerHTML = `
+        <div class="section-heading"><div><h2>조건 설정</h2><p>배정 우선순위와 추가 조건을 설정합니다.</p></div></div>
+        <form class="settings-grid" id="condition-form">
+          <label>1순위<select name="priority1"><option value="distance">주소 기준 가까운 투표소 우선</option><option value="preferredDistrict">선호구 반영</option><option value="preferredDong">선호동 반영</option></select></label>
+          <label>2순위<select name="priority2"><option value="distance">주소 기준 가까운 투표소 우선</option><option value="preferredDistrict" selected>선호구 반영</option><option value="preferredDong">선호동 반영</option></select></label>
+          <label>3순위<select name="priority3"><option value="distance">주소 기준 가까운 투표소 우선</option><option value="preferredDistrict">선호구 반영</option><option value="preferredDong" selected>선호동 반영</option></select></label>
+          <label class="check-line"><input type="checkbox" name="groupByDepartment"> 부서끼리 붙여주기</label>
+          <label class="check-line"><input type="checkbox" name="considerRank"> 직급 반영</label>
+          <label class="check-line"><input type="checkbox" name="considerAddress" checked> 주소 반영</label>
+          <div class="button-row span-3"><button type="submit">조건 저장</button><button class="ghost" type="reset">조건 초기화</button></div>
+        </form>
+      `;
+      section.querySelector('#condition-form').addEventListener('submit', (event) => {
+        event.preventDefault();
+        const form = event.currentTarget;
+        appState.conditions = {
+          priority: [form.priority1.value, form.priority2.value, form.priority3.value],
+          groupByDepartment: form.groupByDepartment.checked,
+          considerRank: form.considerRank.checked,
+          considerAddress: form.considerAddress.checked,
+        };
+        alert('조건이 저장되었습니다.');
+      });
+      return section;
+    }
+
+    function createAssignmentView() {
+      const requiredTotal = appState.pollingPlaces.reduce((sum, place) => sum + Number(place.requiredCount || 0), 0);
+      const validPlaceCount = appState.pollingPlaces.filter((place) => toCoordinate(place.lat) !== null && toCoordinate(place.lng) !== null && Number(place.requiredCount || 0) > 0).length;
+      const validApplicantCount = appState.applicants.filter((applicant) => toCoordinate(applicant.lat) !== null && toCoordinate(applicant.lng) !== null).length;
+      const section = document.createElement('section');
+      section.className = 'card';
+      section.innerHTML = `
+        <div class="section-heading"><div><h2>자동 배정</h2><p>좌표 기준 가까운 신청자를 우선 배정합니다.</p></div></div>
+        <div class="stats-grid">
+          <div><strong>${appState.pollingPlaces.length}</strong><span>등록 투표소 수</span></div>
+          <div><strong>${appState.applicants.length}</strong><span>신청 인원 수</span></div>
+          <div><strong>${requiredTotal}</strong><span>필요 인원 수</span></div>
+          <div><strong>${appState.assignmentResult.length}</strong><span>배정 완료 수</span></div>
+        </div>
+        <p class="notice">거리 계산 가능 데이터: 투표소 ${validPlaceCount}개, 신청자 ${validApplicantCount}명입니다. 위도/경도가 없는 데이터는 배정에서 제외됩니다.</p>
+        <div class="button-row"><button id="run-assignment">자동 배정 실행</button><button class="secondary" id="check-data">배정 전 데이터 확인</button></div>
+      `;
+      section.querySelector('#run-assignment').addEventListener('click', () => {
+        if (validPlaceCount === 0 || validApplicantCount === 0) {
+          alert('거리 계산 가능한 투표소 또는 신청자가 없습니다. 투표소/신청명단 관리에서 주소 좌표 일괄 변환을 먼저 실행해주세요.');
+          return;
+        }
+        appState.assignmentResult = runNearestAssignment(appState.pollingPlaces, appState.applicants, appState.conditions);
+        alert('자동 배정 완료: ' + appState.assignmentResult.length + '명 배정');
+      });
+      section.querySelector('#check-data').addEventListener('click', () => alert(`투표소 ${appState.pollingPlaces.length}개 중 좌표 있음 ${validPlaceCount}개\n신청자 ${appState.applicants.length}명 중 좌표 있음 ${validApplicantCount}명\n필요인원 ${requiredTotal}명`));
+      return section;
+    }
+
+    function createResultView() {
+      const section = document.createElement('section');
+      section.className = 'card';
+      const resultColumns = [
+        { key: 'type', label: '구분' },
+        { key: 'district', label: '자치구' },
+        { key: 'dong', label: '행정동' },
+        { key: 'pollingPlaceName', label: '투표소명' },
+        { key: 'applicantName', label: '배정자' },
+        { key: 'department', label: '부서' },
+        { key: 'distanceKm', label: '거리', render: (row) => row.distanceKm.toFixed(2) + 'km' },
+        { key: 'reason', label: '배정사유' },
+      ];
+      section.innerHTML = `
+        <div class="section-heading"><div><h2>결과 확인</h2><p>배정 결과를 확인하고 엑셀에서 열 수 있는 CSV로 다운로드합니다.</p></div><div class="button-row compact"><button class="secondary" id="download-result">결과 엑셀 다운로드</button><button class="ghost" id="clear-result">결과 초기화</button></div></div>
+        <div id="result-table"></div>
+      `;
+      const render = () => section.querySelector('#result-table').replaceChildren(createTable(resultColumns, appState.assignmentResult, '아직 배정 결과가 없습니다.'));
+      section.querySelector('#download-result').addEventListener('click', () => {
+        const today = new Date().toISOString().slice(0, 10);
+        downloadCsv(`투표사무원_배정결과_${today}.csv`, resultColumns, appState.assignmentResult);
+      });
+      section.querySelector('#clear-result').addEventListener('click', () => { appState.assignmentResult = []; render(); });
+      render();
+      return section;
+    }
+
+    function createAdminTabs() {
+      const wrapper = document.createElement('section');
+      wrapper.className = 'admin-shell';
+      wrapper.innerHTML = `
+        <div class="admin-tabs">
+          <button data-tab="places">투표소 관리</button>
+          <button data-tab="applicants">신청명단 관리</button>
+          <button data-tab="conditions">조건 설정</button>
+          <button data-tab="assignment">자동 배정</button>
+          <button data-tab="results">결과 확인</button>
+        </div>
+        <div id="admin-panel"></div>
+      `;
+      const views = { places: createPollingPlaceManager, applicants: createApplicantManager, conditions: createConditionManager, assignment: createAssignmentView, results: createResultView };
+      const panel = wrapper.querySelector('#admin-panel');
+      const render = (tabId) => {
+        wrapper.querySelectorAll('.admin-tabs button').forEach((button) => button.classList.toggle('active', button.dataset.tab === tabId));
+        panel.replaceChildren(views[tabId]());
+      };
+      wrapper.querySelectorAll('.admin-tabs button').forEach((button) => button.addEventListener('click', () => render(button.dataset.tab)));
+      render('places');
+      return wrapper;
+    }
+
+    function renderScreen(screen) {
+      const content = document.querySelector('#screen-content');
+      content.replaceChildren(screen === 'admin' ? createAdminTabs() : createApplicantForm());
+      document.querySelectorAll('.top-tabs button').forEach((button) => button.classList.toggle('active', button.dataset.screen === screen));
+    }
+
+    function renderApp() {
+      document.querySelector('#app').innerHTML = `
+        <header class="app-header"><div><p class="eyebrow">Daejeon Election Operations</p><h1>대전시 투표사무원 자동배정 시스템</h1></div></header>
+        <main class="container">
+          ${renderKeyNotice()}
+          <div class="top-tabs"><button class="active" data-screen="applicant">신청자용 화면</button><button data-screen="admin">관리자용 화면</button></div>
+          <div id="screen-content"></div>
+        </main>
+      `;
+      document.querySelector('#save-kakao-key').addEventListener('click', () => {
+        localStorage.setItem('KAKAO_JS_KEY', document.querySelector('#kakao-key-input').value.trim());
+        kakaoLoadPromise = null;
+        alert('키를 저장했습니다.');
+      });
+      document.querySelectorAll('.top-tabs button').forEach((button) => button.addEventListener('click', () => renderScreen(button.dataset.screen)));
+      renderScreen('applicant');
+    }
+
+    renderApp();
+  </script>
+</body>
 </html>

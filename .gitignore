@@ -1,5 +1,6 @@
 node_modules/
 dist/
+release/
 .env
 .env.*
 !.env.example
@@ -30,6 +31,7 @@ results/
 *.zip
 *.bak
 *.backup
+*.exe
 
 # Common credential/certificate formats.
 *.pem
