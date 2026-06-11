@@ -1,0 +1,38 @@
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+.env.local
+.env.*.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.DS_Store
+
+# Local data and upload folders may contain personal information.
+data/
+upload/
+uploads/
+backup/
+backups/
+result/
+results/
+
+# Do not commit raw personal data or generated office files.
+*.xlsx
+*.xls
+*.csv
+*.pdf
+*.hwpx
+*.hwp
+*.zip
+*.bak
+*.backup
+
+# Common credential/certificate formats.
+*.pem
+*.key
+*.p12
+*.pfx
